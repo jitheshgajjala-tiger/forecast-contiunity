@@ -1,0 +1,21 @@
+command:
+  - streamlit
+  - run
+  - app.py
+  - --server.port
+  - "8000"
+  - --server.address
+  - "0.0.0.0"
+env:
+  - name: WAREHOUSE_ID
+    valueFrom: sql_warehouse
+  - name: TARGET_TABLE
+    value: catalog.schema.business_signal_inputs
+  - name: BUSINESS_TIMEZONE
+    value: Europe/Brussels
+  - name: WINDOW_START
+    value: CHANGE_ME
+  - name: WINDOW_END
+    value: CHANGE_ME
+  - name: MARKETS
+    value: FR,BE,NL,SE,IS,DK,GB,IE,PL
