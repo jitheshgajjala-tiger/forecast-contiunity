@@ -1,4 +1,5 @@
 import os
+import uuid
 from datetime import datetime, timezone
 
 import streamlit as st
@@ -8,6 +9,8 @@ from databricks.sdk.core import Config
 from workflow import (
     DEFAULT_MARKETS,
     build_audit_select_statement,
+    build_history_insert_statement,
+    build_history_select_statement,
     build_overwrite_statement,
     get_local_schedule,
     is_submission_open,
@@ -82,16 +85,28 @@ if submitted:
         st.stop()
 
     target_table = os.getenv("TARGET_TABLE", "")
+    history_table = os.getenv("HISTORY_TABLE", "")
+    history_written = False
     try:
         validate_table_name(target_table)
+        validate_table_name(history_table)
         selected_markets = {
             market: bool(st.session_state[f"market_{market}"]) for market in markets
         }
+        generated_at = datetime.now(timezone.utc)
+        submission_id = str(uuid.uuid4())
+        history_statement = build_history_insert_statement(
+            history_table,
+            submission_id,
+            selected_markets,
+            user_id,
+            generated_at,
+        )
         statement = build_overwrite_statement(
             target_table,
             selected_markets,
             user_id,
-            datetime.now(timezone.utc),
+            generated_at,
         )
         config = Config()
         warehouse_id = os.environ["WAREHOUSE_ID"]
@@ -103,6 +118,8 @@ if submitted:
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SET TIME ZONE 'UTC'")
+                cursor.execute(history_statement)
+                history_written = True
                 cursor.execute(statement)
         finally:
             connection.close()
@@ -110,11 +127,14 @@ if submitted:
         st.error(f"Submission configuration error: {exc}. No changes were written.")
         st.stop()
     except Exception as exc:
-        st.error(f"Submission failed. The previous table contents were not intentionally changed. Details: {exc}")
+        if history_written:
+            st.error(f"History recorded, but the latest snapshot could not be updated. Details: {exc}")
+        else:
+            st.error(f"Submission failed before history was recorded. The latest snapshot was not intentionally changed. Details: {exc}")
         st.stop()
 
     st.session_state["last_submitted_markets"] = selected_markets
-    st.success("Submission saved. The backing table now contains this complete snapshot.")
+    st.success("Submission saved to the latest snapshot and submission history.")
 
 last_submitted = st.session_state.get("last_submitted_markets")
 if last_submitted:
@@ -123,7 +143,7 @@ if last_submitted:
 
 st.subheader("Latest Forecast Continuity Submission")
 st.caption("Most recent complete market selection written to the backing table. Checked markets have UseCurrentWeekFcst = true.")
-st.button("Refresh submission table", icon=":material/refresh:")
+st.button("Refresh table data", icon=":material/refresh:", help="Reload the latest snapshot and submission history from Databricks. This does not submit or write changes.")
 
 try:
     target_table = os.getenv("TARGET_TABLE", "")
@@ -150,3 +170,32 @@ try:
         st.info("No submission has been saved yet.")
 except Exception as exc:
     st.error(f"Unable to read the latest submission. Check the app's table read permissions. Details: {exc}")
+
+st.subheader("Submission History")
+st.caption("Every successful Submit is retained here, with one row per market and a shared submission ID.")
+
+try:
+    history_table = os.getenv("HISTORY_TABLE", "")
+    history_statement = build_history_select_statement(history_table)
+    config = Config()
+    warehouse_id = os.environ["WAREHOUSE_ID"]
+    connection = sql.connect(
+        server_hostname=config.host.removeprefix("https://"),
+        http_path=f"/sql/1.0/warehouses/{warehouse_id}",
+        credentials_provider=lambda: config.authenticate,
+    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SET TIME ZONE 'UTC'")
+            cursor.execute(history_statement)
+            history_columns = [column[0] for column in cursor.description]
+            history_rows = [dict(zip(history_columns, row)) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+    if history_rows:
+        st.dataframe(history_rows, hide_index=True, use_container_width=True)
+    else:
+        st.info("No submissions are in the history table yet.")
+except Exception as exc:
+    st.error(f"Unable to read submission history. Confirm the history table exists and the app has read permission. Details: {exc}")

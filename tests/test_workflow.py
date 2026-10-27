@@ -4,6 +4,8 @@ from unittest.mock import patch
 
 from workflow import (
     build_audit_select_statement,
+    build_history_insert_statement,
+    build_history_select_statement,
     build_overwrite_statement,
     is_submission_open,
     validate_table_name,
@@ -71,6 +73,25 @@ class WorkflowTests(unittest.TestCase):
             "SELECT Market, UseCurrentWeekFcst, UserID, GenerationTimestamp "
             "FROM main.forecast.business_signal_inputs ORDER BY Market",
         )
+
+    def test_history_insert_appends_submission_id_and_all_markets(self):
+        statement = build_history_insert_statement(
+            "main.forecast.business_signal_history",
+            "submission-123",
+            {"FR": True, "BE": False},
+            "user@example.com",
+            datetime(2026, 10, 27, 8, 30, tzinfo=timezone.utc),
+        )
+
+        self.assertIn("INSERT INTO main.forecast.business_signal_history", statement)
+        self.assertIn("('submission-123', 'FR', TRUE, 'user@example.com'", statement)
+        self.assertIn("('submission-123', 'BE', FALSE, 'user@example.com'", statement)
+
+    def test_history_query_returns_newest_submissions_first(self):
+        statement = build_history_select_statement("main.forecast.business_signal_history")
+
+        self.assertIn("SELECT SubmissionID, Market, UseCurrentWeekFcst, UserID", statement)
+        self.assertIn("ORDER BY GenerationTimestamp DESC, SubmissionID DESC, Market", statement)
 
 
 if __name__ == "__main__":

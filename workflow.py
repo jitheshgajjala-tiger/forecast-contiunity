@@ -97,6 +97,50 @@ def build_audit_select_statement(table_name: str) -> str:
     )
 
 
+def build_history_insert_statement(
+    table_name: str,
+    submission_id: str,
+    market_choices: dict[str, bool],
+    user_id: str,
+    generated_at: datetime,
+) -> str:
+    validate_table_name(table_name)
+    if generated_at.tzinfo is None:
+        raise ValueError("generated_at must be timezone-aware")
+    if not market_choices:
+        raise ValueError("At least one market must be configured")
+
+    timestamp = generated_at.astimezone(timezone.utc)
+    timestamp_literal = timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    submission_literal = _sql_string(submission_id)
+    user_literal = _sql_string(user_id)
+    rows = []
+    for market, use_forecast in market_choices.items():
+        normalized_market = market.strip().upper()
+        if not MARKET_CODE.fullmatch(normalized_market):
+            raise ValueError(f"Invalid market code: {market!r}")
+        rows.append(
+            f"({submission_literal}, '{normalized_market}', {str(bool(use_forecast)).upper()}, "
+            f"{user_literal}, TIMESTAMP '{timestamp_literal}')"
+        )
+
+    values = ",\n    ".join(rows)
+    return (
+        f"INSERT INTO {table_name} "
+        "SELECT SubmissionID, Market, UseCurrentWeekFcst, UserID, GenerationTimestamp "
+        f"FROM VALUES {values} "
+        "AS submitted(SubmissionID, Market, UseCurrentWeekFcst, UserID, GenerationTimestamp)"
+    )
+
+
+def build_history_select_statement(table_name: str) -> str:
+    validate_table_name(table_name)
+    return (
+        "SELECT SubmissionID, Market, UseCurrentWeekFcst, UserID, GenerationTimestamp "
+        f"FROM {table_name} ORDER BY GenerationTimestamp DESC, SubmissionID DESC, Market"
+    )
+
+
 def _sql_string(value: str) -> str:
     if not value or "\x00" in value:
         raise ValueError("User identity is empty or invalid")

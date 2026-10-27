@@ -11,6 +11,8 @@ env:
     value: dbbd297d9e58cab8
   - name: TARGET_TABLE
     value: forecast_continuity_demo.business_inputs.business_signal_inputs
+  - name: HISTORY_TABLE
+    value: forecast_continuity_demo.business_inputs.business_signal_history
   - name: BUSINESS_TIMEZONE
     value: Europe/Brussels
   - name: WINDOW_START
