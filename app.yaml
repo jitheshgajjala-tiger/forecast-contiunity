@@ -8,7 +8,7 @@ command:
   - "0.0.0.0"
 env:
   - name: WAREHOUSE_ID
-    valueFrom: sql_warehouse
+    value: dbbd297d9e58cab8
   - name: TARGET_TABLE
     value: catalog.schema.business_signal_inputs
   - name: BUSINESS_TIMEZONE
