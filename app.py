@@ -7,6 +7,7 @@ from databricks.sdk.core import Config
 
 from workflow import (
     DEFAULT_MARKETS,
+    build_audit_select_statement,
     build_overwrite_statement,
     get_local_schedule,
     is_submission_open,
@@ -119,3 +120,33 @@ last_submitted = st.session_state.get("last_submitted_markets")
 if last_submitted:
     selected_count = sum(last_submitted.values())
     st.caption(f"Last successful submission in this browser session: {selected_count} of {len(markets)} markets enabled.")
+
+st.subheader("Saved snapshot")
+st.caption("Latest complete submission stored in the backing table. Checked markets have UseCurrentWeekFcst = true.")
+st.button("Refresh saved snapshot", icon=":material/refresh:")
+
+try:
+    target_table = os.getenv("TARGET_TABLE", "")
+    audit_statement = build_audit_select_statement(target_table)
+    config = Config()
+    warehouse_id = os.environ["WAREHOUSE_ID"]
+    connection = sql.connect(
+        server_hostname=config.host.removeprefix("https://"),
+        http_path=f"/sql/1.0/warehouses/{warehouse_id}",
+        credentials_provider=lambda: config.authenticate,
+    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SET TIME ZONE 'UTC'")
+            cursor.execute(audit_statement)
+            audit_columns = [column[0] for column in cursor.description]
+            audit_rows = [dict(zip(audit_columns, row)) for row in cursor.fetchall()]
+    finally:
+        connection.close()
+
+    if audit_rows:
+        st.dataframe(audit_rows, hide_index=True, use_container_width=True)
+    else:
+        st.info("No submission has been saved yet.")
+except Exception as exc:
+    st.error(f"Unable to read the saved snapshot. Check the app's table read permissions. Details: {exc}")

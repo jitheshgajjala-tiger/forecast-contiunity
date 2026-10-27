@@ -2,7 +2,12 @@ import unittest
 from datetime import datetime, time, timezone
 from unittest.mock import patch
 
-from workflow import build_overwrite_statement, is_submission_open, validate_table_name
+from workflow import (
+    build_audit_select_statement,
+    build_overwrite_statement,
+    is_submission_open,
+    validate_table_name,
+)
 
 
 class WorkflowTests(unittest.TestCase):
@@ -57,6 +62,15 @@ class WorkflowTests(unittest.TestCase):
     def test_table_name_must_be_three_valid_parts(self):
         with self.assertRaises(ValueError):
             validate_table_name("main.forecast.inputs; DROP TABLE main.forecast.inputs")
+
+    def test_audit_query_selects_all_snapshot_fields(self):
+        statement = build_audit_select_statement("main.forecast.business_signal_inputs")
+
+        self.assertEqual(
+            statement,
+            "SELECT Market, UseCurrentWeekFcst, UserID, GenerationTimestamp "
+            "FROM main.forecast.business_signal_inputs ORDER BY Market",
+        )
 
 
 if __name__ == "__main__":

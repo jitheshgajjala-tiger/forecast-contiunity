@@ -89,6 +89,14 @@ def build_overwrite_statement(
     )
 
 
+def build_audit_select_statement(table_name: str) -> str:
+    validate_table_name(table_name)
+    return (
+        "SELECT Market, UseCurrentWeekFcst, UserID, GenerationTimestamp "
+        f"FROM {table_name} ORDER BY Market"
+    )
+
+
 def _sql_string(value: str) -> str:
     if not value or "\x00" in value:
         raise ValueError("User identity is empty or invalid")
