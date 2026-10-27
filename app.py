@@ -121,9 +121,9 @@ if last_submitted:
     selected_count = sum(last_submitted.values())
     st.caption(f"Last successful submission in this browser session: {selected_count} of {len(markets)} markets enabled.")
 
-st.subheader("Saved snapshot")
-st.caption("Latest complete submission stored in the backing table. Checked markets have UseCurrentWeekFcst = true.")
-st.button("Refresh saved snapshot", icon=":material/refresh:")
+st.subheader("Latest Forecast Continuity Submission")
+st.caption("Most recent complete market selection written to the backing table. Checked markets have UseCurrentWeekFcst = true.")
+st.button("Refresh submission table", icon=":material/refresh:")
 
 try:
     target_table = os.getenv("TARGET_TABLE", "")
@@ -149,4 +149,4 @@ try:
     else:
         st.info("No submission has been saved yet.")
 except Exception as exc:
-    st.error(f"Unable to read the saved snapshot. Check the app's table read permissions. Details: {exc}")
+    st.error(f"Unable to read the latest submission. Check the app's table read permissions. Details: {exc}")
