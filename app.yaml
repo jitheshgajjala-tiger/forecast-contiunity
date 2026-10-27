@@ -14,8 +14,8 @@ env:
   - name: BUSINESS_TIMEZONE
     value: Europe/Brussels
   - name: WINDOW_START
-    value: CHANGE_ME
+    value: "10:00"
   - name: WINDOW_END
-    value: CHANGE_ME
+    value: "11:00"
   - name: MARKETS
     value: FR,BE,NL,SE,IS,DK,GB,IE,PL
