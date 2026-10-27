@@ -134,7 +134,7 @@ if submitted:
         st.stop()
 
     st.session_state["last_submitted_markets"] = selected_markets
-    st.success("Submission saved to the latest snapshot and submission history.")
+    st.success("Submission recorded. The latest-state table was updated, and this submission was added to history.")
 
 last_submitted = st.session_state.get("last_submitted_markets")
 if last_submitted:
