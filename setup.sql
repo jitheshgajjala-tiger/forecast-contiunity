@@ -1,4 +1,8 @@
-CREATE TABLE IF NOT EXISTS catalog.schema.business_signal_inputs (
+CREATE CATALOG IF NOT EXISTS forecast_continuity_demo;
+
+CREATE SCHEMA IF NOT EXISTS forecast_continuity_demo.business_inputs;
+
+CREATE TABLE IF NOT EXISTS forecast_continuity_demo.business_inputs.business_signal_inputs (
   Market STRING NOT NULL,
   UseCurrentWeekFcst BOOLEAN NOT NULL,
   UserID STRING NOT NULL,
