@@ -28,15 +28,18 @@ if not markets:
     st.stop()
 
 try:
+    always_open = os.getenv("ALWAYS_OPEN_FOR_TESTING", "false").strip().lower() == "true"
     start_time, end_time, timezone_name = get_local_schedule()
     open_now, local_now = is_submission_open(
-        datetime.now(timezone.utc), start_time, end_time, timezone_name
+        datetime.now(timezone.utc), start_time, end_time, timezone_name, always_open
     )
 except ValueError as exc:
     st.error(f"Invalid schedule configuration: {exc}")
     st.stop()
 
-if open_now:
+if always_open:
+    st.warning("Testing mode is enabled. Submissions are open at all times.")
+elif open_now:
     st.success(f"Submission window is open until {end_time.strftime('%H:%M')} {timezone_name}.")
 else:
     st.warning(
@@ -61,7 +64,7 @@ with st.form("market_selection"):
 if submitted:
     # Re-check after the form event so a late request cannot cross the deadline.
     open_at_submit, _ = is_submission_open(
-        datetime.now(timezone.utc), start_time, end_time, timezone_name
+        datetime.now(timezone.utc), start_time, end_time, timezone_name, always_open
     )
     if not open_at_submit:
         st.error("The submission window has closed. No changes were written.")

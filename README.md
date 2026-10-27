@@ -6,6 +6,7 @@ Streamlit prototype for the business-input workflow in slides 22–24.
 
 - Every new browser session defaults all configured markets to checked.
 - The Tuesday submission window is enforced by the app using the configured business timezone.
+- `ALWAYS_OPEN_FOR_TESTING=true` keeps submissions available at all times for demos; turn it off before production.
 - Market choices live in a Streamlit form. No table write occurs until Submit is pressed.
 - Submit overwrites the full Delta table with one row per configured market and captures the signed-in user plus a UTC generation timestamp.
 - The last successful submission is shown for the current browser session. Drafts are not written to the table.

@@ -36,13 +36,17 @@ def _parse_time(value: str, name: str) -> time:
 
 
 def is_submission_open(
-    now_utc: datetime, start_time: time, end_time: time, timezone_name: str
+    now_utc: datetime,
+    start_time: time,
+    end_time: time,
+    timezone_name: str,
+    always_open: bool = False,
 ) -> tuple[bool, datetime]:
     if now_utc.tzinfo is None:
         raise ValueError("now_utc must be timezone-aware")
     local_now = now_utc.astimezone(ZoneInfo(timezone_name))
     inside_timebox = start_time <= local_now.time().replace(tzinfo=None) < end_time
-    return local_now.weekday() == 1 and inside_timebox, local_now
+    return always_open or (local_now.weekday() == 1 and inside_timebox), local_now
 
 
 def validate_table_name(table_name: str) -> None:

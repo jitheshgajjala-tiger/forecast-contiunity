@@ -17,5 +17,7 @@ env:
     value: "10:00"
   - name: WINDOW_END
     value: "11:00"
+  - name: ALWAYS_OPEN_FOR_TESTING
+    value: "true"
   - name: MARKETS
     value: FR,BE,NL,SE,IS,DK,GB,IE,PL

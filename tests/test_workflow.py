@@ -26,6 +26,13 @@ class WorkflowTests(unittest.TestCase):
         with patch("workflow.ZoneInfo", return_value=timezone.utc):
             self.assertFalse(is_submission_open(at_end, time(10), time(11), "UTC")[0])
 
+    def test_testing_mode_is_open_outside_the_tuesday_timebox(self):
+        monday = datetime(2026, 10, 26, 3, 0, tzinfo=timezone.utc)
+        with patch("workflow.ZoneInfo", return_value=timezone.utc):
+            self.assertTrue(
+                is_submission_open(monday, time(10), time(11), "UTC", always_open=True)[0]
+            )
+
     def test_overwrite_includes_all_markets_and_a_utc_timestamp(self):
         statement = build_overwrite_statement(
             "main.forecast.business_signal_inputs",
