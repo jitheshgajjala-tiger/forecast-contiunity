@@ -41,6 +41,8 @@ except ValueError as exc:
     st.error(f"Invalid schedule configuration: {exc}")
     st.stop()
 
+st.caption(f"Current local time ({timezone_name}): {local_now:%A, %d %b %Y %H:%M}")
+
 if always_open:
     st.warning("Testing mode is enabled. Submissions are open at all times.")
 elif open_now:
